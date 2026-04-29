@@ -20,7 +20,8 @@ async function build() {
       minify: true,
       sourcemap: true,
       // We exclude certain node_modules if needed, but for esbuild bundle: true is fine for simple apps
-      external: ['mysql2', 'bcryptjs', 'express', 'socket.io', 'multer', 'winston', 'morgan', 'helmet', 'compression', 'cors', 'dotenv', 'jsonwebtoken', 'moment', 'qrcode', 'razorpay', 'uuid'],
+      external: [
+        'bcryptjs', 'express', 'socket.io', 'multer', 'winston', 'morgan', 'helmet', 'compression', 'cors', 'dotenv', 'jsonwebtoken', 'moment', 'qrcode', 'razorpay', 'uuid'],
     });
 
     console.log('✅ Build complete: dist/app.js');
