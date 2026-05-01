@@ -180,22 +180,6 @@ const Login = () => {
                     'Login'
                   )}
                 </Button>
-
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      style={{
-                        color: '#3b82f6',
-                        textDecoration: 'none',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Register here
-                    </Link>
-                  </Typography>
-                </Box>
               </form>
 
               {/* Demo Credentials */}
