@@ -35,8 +35,8 @@ router.use(auth);
 
 // Resource access mapping
 router.get('/dashboard', authorize('management'), getDashboardStats);
-router.get('/residents', authorize('management', 'guard', 'resident'), getAllResidents);
-router.get('/apartments', authorize('management', 'guard', 'resident'), getAllApartments);
+router.get('/residents', authorize('management', 'guard'), getAllResidents);
+router.get('/apartments', authorize('management', 'guard'), getAllApartments);
 router.put('/apartments/:id', authorize('management'), updateApartmentValidation, validate, updateApartment);
 router.get('/transactions', authorize('management'), getAllTransactions);
 router.post('/transactions', authorize('management'), addTransactionValidation, validate, addTransaction);

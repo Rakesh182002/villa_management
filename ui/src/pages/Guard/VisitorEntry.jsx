@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Card, CardContent, TextField, Button, Avatar, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, InputAdornment, Tabs, Tab
+  CircularProgress, InputAdornment, Tabs, Tab,
+  Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Autocomplete,
+  Grid
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
+import AddIcon from '@mui/icons-material/Add';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { format, formatDistanceToNow } from 'date-fns';
 import toast, { Toaster } from 'react-hot-toast';
-import { visitorAPI } from '../../services/api';
+import { visitorAPI, managementAPI } from '../../services/api';
 import socketService from '../../services/socket';
 
 const statusColors = { pending: 'warning', approved: 'success', denied: 'error', entered: 'info', exited: 'default' };
@@ -22,10 +25,26 @@ export default function VisitorEntry() {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState(0);
 
+  const [openAdd, setOpenAdd] = useState(false);
+  const [residents, setResidents] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    resident_id: '', visitor_name: '', visitor_phone: '',
+    purpose: 'Delivery', vehicle_number: ''
+  });
+
   useEffect(() => {
     loadData();
+    fetchResidents();
     socketService.onVisitorStatusUpdate(() => loadData());
   }, []);
+
+  const fetchResidents = async () => {
+    try {
+      const res = await managementAPI.getResidents();
+      setResidents(res.data.data);
+    } catch { console.error('Failed to load residents'); }
+  };
 
   const loadData = async () => {
     try {
@@ -53,6 +72,24 @@ export default function VisitorEntry() {
     } catch { toast.error('Failed to mark exit'); }
   };
 
+  const handleDirectEntry = async () => {
+    if (!form.resident_id || !form.visitor_name || !form.visitor_phone) {
+      return toast.error('Please fill required fields');
+    }
+    setSubmitting(true);
+    try {
+      const res = await visitorAPI.guardInitiate(form);
+      toast.success(res.data.message);
+      setOpenAdd(false);
+      setForm({ resident_id: '', visitor_name: '', visitor_phone: '', purpose: 'Delivery', vehicle_number: '' });
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to initiate entry');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const filterList = (list) => list.filter((v) =>
     v.visitor_name?.toLowerCase().includes(search.toLowerCase()) ||
     v.visitor_phone?.includes(search) ||
@@ -66,10 +103,14 @@ export default function VisitorEntry() {
       <Toaster position="top-right" />
       <Typography variant="h5" fontWeight={700} gutterBottom>Visitor Entry Management</Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField size="small" placeholder="Search by name, phone, apartment…" value={search} onChange={(e) => setSearch(e.target.value)}
           sx={{ minWidth: 280 }}
           InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenAdd(true)}
+          sx={{ ml: 'auto', background: 'linear-gradient(135deg, #2563eb, #1e40af)', borderRadius: 2 }}>
+          Direct Entry
+        </Button>
       </Box>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
@@ -152,6 +193,43 @@ export default function VisitorEntry() {
           </Table>
         </TableContainer>
       </Card>
+
+      <Dialog open={openAdd} onClose={() => setOpenAdd(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Security-Initiated Visitor Entry</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Autocomplete
+                options={residents}
+                getOptionLabel={(option) => `${option.full_name} (${option.apartment_number})`}
+                onChange={(_, val) => setForm({ ...form, resident_id: val?.id || '' })}
+                renderInput={(params) => <TextField {...params} label="Select Resident/Apartment *" size="small" />}
+                sx={{ mt: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Visitor Name *" size="small" value={form.visitor_name} onChange={e => setForm({ ...form, visitor_name: e.target.value })} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Phone Number *" size="small" value={form.visitor_phone} onChange={e => setForm({ ...form, visitor_phone: e.target.value })} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth select label="Purpose" size="small" value={form.purpose} onChange={e => setForm({ ...form, purpose: e.target.value })}>
+                {['Delivery', 'Guest', 'Official', 'Cab/Taxi', 'Other'].map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Vehicle Number" size="small" value={form.vehicle_number} onChange={e => setForm({ ...form, vehicle_number: e.target.value })} />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setOpenAdd(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleDirectEntry} disabled={submitting} sx={{ borderRadius: 2, px: 4 }}>
+            {submitting ? <CircularProgress size={20} color="inherit" /> : 'Initiate Request'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

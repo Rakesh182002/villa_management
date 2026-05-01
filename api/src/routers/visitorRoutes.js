@@ -12,7 +12,8 @@ const {
   markVisitorEntry,
   markVisitorExit,
   getVisitorsInside,
-  checkOverstay
+  checkOverstay,
+  initiateGuardVisitorRequest
 } = require('../controllers/visitorController');
 
 // Validation rules
@@ -40,5 +41,6 @@ router.put('/:id/entry', auth, authorize('guard'), markVisitorEntry);
 router.put('/:id/exit', auth, authorize('guard'), markVisitorExit);
 router.get('/inside', auth, authorize('guard', 'management'), getVisitorsInside);
 router.get('/overstay', auth, authorize('guard', 'management'), checkOverstay);
+router.post('/guard-initiate', auth, authorize('guard'), createVisitorValidation, validate, initiateGuardVisitorRequest);
 
 module.exports = router;

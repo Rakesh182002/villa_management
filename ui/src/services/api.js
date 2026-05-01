@@ -73,6 +73,7 @@ export const visitorAPI = {
   markExit: (id) => api.put(`/visitors/${id}/exit`),
   getInside: () => api.get('/visitors/inside'),
   checkOverstay: () => api.get('/visitors/overstay'),
+  guardInitiate: (data) => api.post('/visitors/guard-initiate', data),
 };
 
 // Staff API

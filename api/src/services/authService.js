@@ -94,6 +94,10 @@ const authService = {
       updates.push('profile_pic = ?');
       values.push(`/uploads/profiles/${file.filename}`);
     }
+    if (data.visitor_auto_approve !== undefined) {
+      updates.push('visitor_auto_approve = ?');
+      values.push(data.visitor_auto_approve ? 1 : 0);
+    }
 
     if (updates.length === 0) {
       const error = new Error('No updates provided');

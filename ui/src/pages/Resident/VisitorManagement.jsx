@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   MenuItem, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, IconButton, Tooltip, CircularProgress, Tabs, Tab,
-  Divider, Alert, InputAdornment
+  Divider, Alert, InputAdornment, Switch, FormControlLabel
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import QrCodeIcon from '@mui/icons-material/QrCode';
@@ -67,6 +67,26 @@ export default function VisitorManagement() {
       toast(`${data.visitor.visitor_name} has left`, { icon: '🚪' });
       fetchVisitors();
     });
+
+    // Listen for guard-initiated requests
+    socketService.socket?.on('visitor:approval_request', (data) => {
+      if (data.requireApproval) {
+        toast((t) => (
+          <span>
+            <b>{data.visitor.visitor_name}</b> is at the gate.
+            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+              <button onClick={() => { handleApprove(data.visitor.id); toast.dismiss(t.id); }} style={{ background: '#22c55e', color: 'white', border: 'none', padding: '4px 8px', borderRadius: 4, cursor: 'pointer' }}>Approve</button>
+              <button onClick={() => { handleDeny(data.visitor.id); toast.dismiss(t.id); }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '4px 8px', borderRadius: 4, cursor: 'pointer' }}>Deny</button>
+            </div>
+          </span>
+        ), { duration: 6000, icon: '🔔' });
+      }
+      fetchVisitors();
+    });
+
+    return () => {
+      socketService.socket?.off('visitor:approval_request');
+    };
   }, []);
 
   const formik = useFormik({
@@ -108,6 +128,18 @@ export default function VisitorManagement() {
       setVisitors((prev) => prev.map((v) => v.id === id ? { ...v, status: 'denied' } : v));
       toast.error('Visitor denied');
     } catch { toast.error('Failed to deny'); }
+  };
+
+  const handleToggleAutoApprove = async (event) => {
+    const checked = event.target.checked;
+    try {
+      await authAPI.updateProfile({ visitor_auto_approve: checked });
+      // Update local storage/context if needed, but for now just toast and re-syncing user is handled by context if we update it
+      toast.success(`Auto-approve ${checked ? 'enabled' : 'disabled'}`);
+      window.location.reload(); // Simple way to refresh user context
+    } catch {
+      toast.error('Failed to update preference');
+    }
   };
 
   const handleShowQR = (visitor) => {
@@ -188,6 +220,30 @@ export default function VisitorManagement() {
           <Tab label={`Inside (${stats.inside})`} />
           <Tab label="Exited" />
         </Tabs>
+      </Card>
+
+      {/* Security Preferences */}
+      <Card sx={{ borderRadius: 2, mb: 3, border: '1px solid #fee2e2' }}>
+        <CardContent sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography variant="subtitle1" fontWeight={700} color="error.main">Security Preference</Typography>
+            <Typography variant="body2" color="text.secondary">
+              When security creates a visitor request for you (e.g. unannounced delivery)
+            </Typography>
+          </Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={Boolean(user?.visitor_auto_approve)}
+                onChange={handleToggleAutoApprove}
+                color="primary"
+              />
+            }
+            label={user?.visitor_auto_approve ? 'Auto-Approve' : 'Manual Approval'}
+            labelPlacement="start"
+            sx={{ m: 0, '& .MuiFormControlLabel-label': { fontWeight: 700, fontSize: '0.85rem' } }}
+          />
+        </CardContent>
       </Card>
 
       {/* Table */}

@@ -1,5 +1,6 @@
 const QRCode = require('qrcode');
 const visitorDao = require('../dao/visitorDao');
+const authDao = require('../dao/authDao');
 const { getIO } = require('../config/socket');
 
 const visitorService = {
@@ -29,6 +30,50 @@ const visitorService = {
     });
 
     const visitor = await visitorDao.findById(result.insertId);
+    return visitor;
+  },
+  
+  async initiateGuardVisitorRequest(guardId, data) {
+    const { resident_id, visitor_name, visitor_phone, vehicle_number, purpose } = data;
+    
+    // Check resident settings
+    const resident = await authDao.findUserById(resident_id);
+    if (!resident) throw new Error('Target resident not found');
+
+    const status = resident.visitor_auto_approve ? 'approved' : 'pending';
+    const unique_code = `G${Date.now().toString().slice(-4)}${Math.floor(Math.random() * 1000)}`;
+    
+    // Generate QR (for record)
+    const qr_code = await QRCode.toDataURL(JSON.stringify({
+      code: unique_code,
+      visitor: visitor_name,
+      guard_id: guardId,
+      status
+    }));
+
+    const result = await visitorDao.create({
+      resident_id,
+      visitor_name,
+      visitor_phone,
+      vehicle_number,
+      unique_code,
+      qr_code,
+      purpose,
+      expected_arrival: new Date(),
+      status
+    });
+
+    const visitor = await visitorDao.findById(result.insertId);
+
+    // Notify Resident
+    try {
+      const io = getIO();
+      io.to(`user:${resident_id}`).emit('visitor:approval_request', { 
+        visitor,
+        requireApproval: status === 'pending'
+      });
+    } catch (e) { /* socket not initialized */ }
+
     return visitor;
   },
 

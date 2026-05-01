@@ -14,6 +14,7 @@ CREATE TABLE users (
     profile_pic VARCHAR(255),
     is_verified BOOLEAN DEFAULT FALSE,
     fcm_token VARCHAR(255),
+    visitor_auto_approve TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_email (email),
     INDEX idx_phone (phone),

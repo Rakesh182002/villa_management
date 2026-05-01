@@ -23,7 +23,7 @@ const authDao = {
 
   async findUserById(id) {
     const [rows] = await db.query(
-      'SELECT id, email, full_name, phone, role, apartment_number, profile_pic, is_verified, created_at FROM users WHERE id = ?',
+      'SELECT id, email, full_name, phone, role, apartment_number, profile_pic, is_verified, visitor_auto_approve, created_at FROM users WHERE id = ?',
       [id]
     );
     return rows[0] || null;
@@ -31,7 +31,7 @@ const authDao = {
 
   async findUserByIdSafe(id) {
     const [rows] = await db.query(
-      'SELECT id, email, full_name, phone, role, apartment_number FROM users WHERE id = ?',
+      'SELECT id, email, full_name, phone, role, apartment_number, profile_pic, is_verified, visitor_auto_approve FROM users WHERE id = ?',
       [id]
     );
     return rows[0] || null;

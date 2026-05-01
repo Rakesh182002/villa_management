@@ -21,6 +21,26 @@ const createVisitorRequest = async (req, res) => {
   }
 };
 
+// @desc    Guard initiates visitor request for resident
+// @route   POST /api/visitors/guard-initiate
+// @access  Private (Guard)
+const initiateGuardVisitorRequest = async (req, res) => {
+  try {
+    const visitor = await visitorService.initiateGuardVisitorRequest(req.userId, req.body);
+    res.status(201).json({
+      success: true,
+      message: visitor.status === 'approved' ? 'Visitor auto-approved' : 'Approval request sent to resident',
+      data: visitor
+    });
+  } catch (error) {
+    logger.error('Guard initiate visitor error:', error);
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Error initiating visitor request'
+    });
+  }
+};
+
 // @desc    Get all visitor requests for resident
 // @route   GET /api/visitors
 // @access  Private (Resident)
@@ -189,5 +209,6 @@ module.exports = {
   markVisitorEntry,
   markVisitorExit,
   getVisitorsInside,
-  checkOverstay
+  checkOverstay,
+  initiateGuardVisitorRequest
 };
