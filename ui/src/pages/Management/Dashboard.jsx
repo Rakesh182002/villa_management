@@ -49,6 +49,7 @@ const ManagementDashboard = () => {
       setVisitorAnalytics(visRes.data.data);
     } catch {
       showSnackbar('Error loading dashboard', 'error');
+      console.log("Error loading dashboard")
     } finally {
       setLoading(false);
     }
