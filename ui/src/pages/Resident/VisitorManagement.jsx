@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   MenuItem, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, IconButton, Tooltip, CircularProgress, Tabs, Tab,
-  Divider, Alert, InputAdornment, Switch, FormControlLabel
+  Divider, Alert, InputAdornment, Switch, FormControlLabel, Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import QrCodeIcon from '@mui/icons-material/QrCode';
@@ -16,16 +16,21 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
+import SecurityIcon from '@mui/icons-material/Security';
+import ShieldIcon from '@mui/icons-material/Shield';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { QRCodeSVG } from 'qrcode.react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { format, formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
-import { visitorAPI } from '../../services/api';
+import { visitorAPI, authAPI } from '../../services/api';
 import socketService from '../../services/socket';
 import pdfService from '../../services/pdf';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDate, formatDateTime } from '../../utils/helpers';
+import PageHeader from '../../components/Common/PageHeader';
 
 const statusColors = {
   pending: 'warning', approved: 'success', denied: 'error',
@@ -35,7 +40,7 @@ const statusColors = {
 const purposeOptions = ['Delivery', 'Guest', 'Housework', 'Official', 'Cab/Taxi', 'Other'];
 
 export default function VisitorManagement() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -43,6 +48,8 @@ export default function VisitorManagement() {
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [tab, setTab] = useState(0);
   const [search, setSearch] = useState('');
+  const [approvalDialog, setApprovalDialog] = useState({ open: false, visitor: null, requireApproval: false });
+  const [savingPref, setSavingPref] = useState(false);
 
   const fetchVisitors = async () => {
     try {
@@ -70,17 +77,7 @@ export default function VisitorManagement() {
 
     // Listen for guard-initiated requests
     socketService.socket?.on('visitor:approval_request', (data) => {
-      if (data.requireApproval) {
-        toast((t) => (
-          <span>
-            <b>{data.visitor.visitor_name}</b> is at the gate.
-            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-              <button onClick={() => { handleApprove(data.visitor.id); toast.dismiss(t.id); }} style={{ background: '#22c55e', color: 'white', border: 'none', padding: '4px 8px', borderRadius: 4, cursor: 'pointer' }}>Approve</button>
-              <button onClick={() => { handleDeny(data.visitor.id); toast.dismiss(t.id); }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '4px 8px', borderRadius: 4, cursor: 'pointer' }}>Deny</button>
-            </div>
-          </span>
-        ), { duration: 6000, icon: '🔔' });
-      }
+      setApprovalDialog({ open: true, visitor: data.visitor, requireApproval: data.requireApproval });
       fetchVisitors();
     });
 
@@ -132,14 +129,26 @@ export default function VisitorManagement() {
 
   const handleToggleAutoApprove = async (event) => {
     const checked = event.target.checked;
+    setSavingPref(true);
     try {
-      await authAPI.updateProfile({ visitor_auto_approve: checked });
-      // Update local storage/context if needed, but for now just toast and re-syncing user is handled by context if we update it
+      const formData = new FormData();
+      formData.append('visitor_auto_approve', checked ? 1 : 0);
+      await authAPI.updateProfile(formData);
+      updateUser({ visitor_auto_approve: checked ? 1 : 0 });
       toast.success(`Auto-approve ${checked ? 'enabled' : 'disabled'}`);
-      window.location.reload(); // Simple way to refresh user context
     } catch {
       toast.error('Failed to update preference');
+    } finally {
+      setSavingPref(false);
     }
+  };
+
+  const handleApprovalAction = async (action) => {
+    const id = approvalDialog.visitor?.id;
+    if (!id) return;
+    setApprovalDialog((prev) => ({ ...prev, open: false }));
+    if (action === 'approve') await handleApprove(id);
+    else await handleDeny(id);
   };
 
   const handleShowQR = (visitor) => {
@@ -169,15 +178,17 @@ export default function VisitorManagement() {
       <Toaster position="top-right" />
 
       {/* Page Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>Visitor Management</Typography>
-          <Typography variant="body2" color="text.secondary">Invite and manage your visitors</Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}
-          sx={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', borderRadius: 2 }}>
-          Invite Visitor
-        </Button>
+      <Box sx={{ mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <PageHeader
+          title="Visitor Management"
+          subtitle="Manage your visitors"
+          actions={
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              Invite Visitor
+            </Button>
+          }
+        />
+        
       </Box>
 
       {/* Stats */}
@@ -224,25 +235,49 @@ export default function VisitorManagement() {
 
       {/* Security Preferences */}
       <Card sx={{ borderRadius: 2, mb: 3, border: '1px solid #fee2e2' }}>
-        <CardContent sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700} color="error.main">Security Preference</Typography>
-            <Typography variant="body2" color="text.secondary">
-              When security creates a visitor request for you (e.g. unannounced delivery)
-            </Typography>
+        <CardContent sx={{ p: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <Avatar sx={{ bgcolor: Boolean(user?.visitor_auto_approve) ? 'success.light' : 'warning.light', color: Boolean(user?.visitor_auto_approve) ? 'success.dark' : 'warning.dark', width: 44, height: 44 }}>
+                {Boolean(user?.visitor_auto_approve) ? <ShieldIcon /> : <SecurityIcon />}
+              </Avatar>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography variant="subtitle1" fontWeight={700}>Security Preference</Typography>
+                  <Chip
+                    size="small"
+                    label={Boolean(user?.visitor_auto_approve) ? 'Auto-Approve ON' : 'Manual Approval'}
+                    color={Boolean(user?.visitor_auto_approve) ? 'success' : 'warning'}
+                    sx={{ fontWeight: 700, fontSize: '0.7rem' }}
+                  />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  When security registers an unannounced visitor (e.g. delivery, guest) at the gate:
+                </Typography>
+                <Stack spacing={0.3}>
+                  <Typography variant="caption" color={Boolean(user?.visitor_auto_approve) ? 'success.main' : 'text.disabled'} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <ShieldIcon sx={{ fontSize: 13 }} /> <b>Auto-Approve:</b>&nbsp;Visitor is let in immediately without your confirmation.
+                  </Typography>
+                  <Typography variant="caption" color={!Boolean(user?.visitor_auto_approve) ? 'warning.main' : 'text.disabled'} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <NotificationsActiveIcon sx={{ fontSize: 13 }} /> <b>Manual:</b>&nbsp;You receive a dialog to Approve or Deny before entry.
+                  </Typography>
+                </Stack>
+              </Box>
+            </Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={Boolean(user?.visitor_auto_approve)}
+                  onChange={handleToggleAutoApprove}
+                  disabled={savingPref}
+                  color="success"
+                />
+              }
+              label={savingPref ? 'Saving…' : (Boolean(user?.visitor_auto_approve) ? 'Auto-Approve' : 'Manual')}
+              labelPlacement="start"
+              sx={{ m: 0, '& .MuiFormControlLabel-label': { fontWeight: 700, fontSize: '0.85rem', minWidth: 90, textAlign: 'right' } }}
+            />
           </Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={Boolean(user?.visitor_auto_approve)}
-                onChange={handleToggleAutoApprove}
-                color="primary"
-              />
-            }
-            label={user?.visitor_auto_approve ? 'Auto-Approve' : 'Manual Approval'}
-            labelPlacement="start"
-            sx={{ m: 0, '& .MuiFormControlLabel-label': { fontWeight: 700, fontSize: '0.85rem' } }}
-          />
         </CardContent>
       </Card>
 
@@ -274,11 +309,20 @@ export default function VisitorManagement() {
                 <TableRow key={v.id} hover sx={{ '&:last-child td': { border: 0 } }}>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: '#eff6ff', color: '#3b82f6', fontSize: '0.75rem', fontWeight: 700 }}>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: v.unique_code?.startsWith('G') ? '#fef3c7' : '#eff6ff', color: v.unique_code?.startsWith('G') ? '#d97706' : '#3b82f6', fontSize: '0.75rem', fontWeight: 700 }}>
                         {v.visitor_name[0]}
                       </Avatar>
                       <Box>
-                        <Typography variant="body2" fontWeight={600}>{v.visitor_name}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Typography variant="body2" fontWeight={600}>{v.visitor_name}</Typography>
+                          {v.unique_code?.startsWith('G') && (
+                            <Chip icon={<SecurityIcon sx={{ fontSize: '10px !important' }} />} label="Guard Entry" size="small"
+                              sx={{
+                                fontSize: '0.6rem', height: 16, bgcolor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d',
+                                '& .MuiChip-icon': { color: '#d97706', ml: '4px' }, '& .MuiChip-label': { px: '4px' }
+                              }} />
+                          )}
+                        </Box>
                         <Typography variant="caption" color="text.secondary">{v.visitor_phone}</Typography>
                       </Box>
                     </Box>
@@ -299,7 +343,12 @@ export default function VisitorManagement() {
                     </Typography>
                     {v.actual_entry && (
                       <Typography variant="caption" display="block" color="success.main">
-                        In: {format(new Date(v.actual_entry), 'hh:mm a')}
+                        In: {formatDateTime(v.actual_entry)}
+                      </Typography>
+                    )}
+                    {v.actual_exit && (
+                      <Typography variant="caption" display="block" color="error.main">
+                        Out: {formatDateTime(v.actual_exit)}
                       </Typography>
                     )}
                   </TableCell>

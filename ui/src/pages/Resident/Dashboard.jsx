@@ -7,8 +7,8 @@ import {
   Typography,
   Button,
   Avatar,
-  LinearProgress,
   Chip,
+  Skeleton,
 } from '@mui/material';
 import {
   People,
@@ -24,6 +24,8 @@ import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../../contexts/AuthContext';
 import { visitorAPI, staffAPI, complaintAPI, billAPI } from '../../services/api';
 import { motion } from 'framer-motion';
+import { formatDateTime } from '../../utils/helpers';
+import PageHeader from '../../components/Common/PageHeader';
 
 const StatCard = ({ title, value, icon, color, change, loading }) => (
   <motion.div
@@ -57,6 +59,58 @@ const StatCard = ({ title, value, icon, color, change, loading }) => (
   </motion.div>
 );
 
+// ── Full-page skeleton shown while data loads ──────────────────────────────
+const SkeletonDashboard = () => (
+  <Box>
+    {/* Header skeleton */}
+    <Box sx={{ mb: 3 }}>
+      <Skeleton variant="text" width={280} height={44} />
+      <Skeleton variant="text" width={200} height={24} />
+    </Box>
+
+    {/* Stat-card skeletons */}
+    <Grid container spacing={3} sx={{ mb: 4 }}>
+      {[...Array(4)].map((_, i) => (
+        <Grid item xs={12} sm={6} md={3} key={i}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Skeleton variant="circular" width={48} height={48} />
+              </Box>
+              <Skeleton variant="text" width="40%" height={48} />
+              <Skeleton variant="text" width="60%" height={20} />
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+
+    {/* Activity-card skeletons */}
+    <Grid container spacing={3}>
+      {[...Array(2)].map((_, i) => (
+        <Grid item xs={12} md={6} key={i}>
+          <Card>
+            <CardContent>
+              <Skeleton variant="text" width={140} height={32} sx={{ mb: 1 }} />
+              {[...Array(4)].map((__, j) => (
+                <Box key={j} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5,
+                    borderBottom: j < 3 ? 1 : 0, borderColor: 'divider' }}>
+                  <Skeleton variant="circular" width={40} height={40} sx={{ flexShrink: 0 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Skeleton variant="text" width="55%" height={20} />
+                    <Skeleton variant="text" width="75%" height={16} />
+                  </Box>
+                  <Skeleton variant="rounded" width={64} height={24} />
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  </Box>
+);
+
 const ResidentDashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -73,7 +127,8 @@ const ResidentDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (showFullLoader = false) => {
+    if (showFullLoader) setLoading(true);
     try {
       const [visitorsRes, staffRes, complaintsRes, billsRes] = await Promise.all([
         visitorAPI.getAll(),
@@ -98,6 +153,15 @@ const ResidentDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <>
+        <Helmet><title>Dashboard - Resident</title></Helmet>
+        <SkeletonDashboard />
+      </>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -105,22 +169,22 @@ const ResidentDashboard = () => {
       </Helmet>
 
       <Box>
-        {/* Welcome Section */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Welcome back, {user?.full_name}! 👋
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Here's what's happening in your society today
-          </Typography>
-        </Box>
+         <PageHeader
+                  title={`Welcome, ${user?.full_name} 👋`}
+                  subtitle="Here's what's happening in your society today"
+                  actions={
+                    <Button variant="outlined" startIcon={<TrendingUp />} onClick={() => fetchDashboardData(true)}>
+                      Refresh
+                    </Button>
+                  }
+                />
 
         {/* Stats Grid */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Visitors Today"
-              value={stats.visitors}
+              value={stats.visitors||0}
               icon={<People />}
               color="primary"
               loading={loading}
@@ -129,7 +193,7 @@ const ResidentDashboard = () => {
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Staff Present"
-              value={stats.staffAttendance}
+              value={stats.staffAttendance||0}
               icon={<PersonAdd />}
               color="success"
               loading={loading}
@@ -138,7 +202,7 @@ const ResidentDashboard = () => {
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Open Complaints"
-              value={stats.complaints}
+              value={stats.complaints||0}
               icon={<Report />}
               color="warning"
               loading={loading}
@@ -164,14 +228,12 @@ const ResidentDashboard = () => {
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   Recent Visitors
                 </Typography>
-                {loading ? (
-                  <LinearProgress />
-                ) : recentVisitors.length === 0 ? (
+                {recentVisitors.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
                     No recent visitors
                   </Typography>
                 ) : (
-                  <Box>
+                  <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.5 }}>
                     {recentVisitors.map((visitor) => (
                       <Box
                         key={visitor.id}
@@ -185,14 +247,17 @@ const ResidentDashboard = () => {
                           '&:last-child': { borderBottom: 0 },
                         }}
                       >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar>{visitor.visitor_name.charAt(0)}</Avatar>
-                          <Box>
-                            <Typography variant="subtitle2" fontWeight="bold">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1 }}>
+                          <Avatar sx={{ flexShrink: 0 }}>{visitor.visitor_name.charAt(0)}</Avatar>
+                          <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+                            <Typography variant="subtitle2" fontWeight="bold" noWrap>
                               {visitor.visitor_name}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" display="block" noWrap>
                               {visitor.purpose}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" display="block" noWrap>
+                              {formatDateTime(visitor.actual_entry)}{visitor.actual_exit ? ` — ${formatDateTime(visitor.actual_exit)}` : ''}
                             </Typography>
                           </Box>
                         </Box>
@@ -219,9 +284,7 @@ const ResidentDashboard = () => {
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   Pending Bills
                 </Typography>
-                {loading ? (
-                  <LinearProgress />
-                ) : unpaidBills.length === 0 ? (
+                {unpaidBills.length === 0 ? (
                   <Box sx={{ py: 4, textAlign: 'center' }}>
                     <CheckCircle sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
                     <Typography variant="body2" color="text.secondary">
@@ -229,7 +292,7 @@ const ResidentDashboard = () => {
                     </Typography>
                   </Box>
                 ) : (
-                  <Box>
+                  <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.5 }}>
                     {unpaidBills.map((bill) => (
                       <Box
                         key={bill.id}
@@ -268,70 +331,6 @@ const ResidentDashboard = () => {
           </Grid>
         </Grid>
 
-        {/* Quick Actions */}
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Quick Actions
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6} sm={4} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<People />}
-                sx={{ py: 2 }}
-                href="/resident/visitors"
-              >
-                Invite Visitor
-              </Button>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<Report />}
-                sx={{ py: 2 }}
-                href="/resident/complaints"
-              >
-                Raise Complaint
-              </Button>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<Payment />}
-                sx={{ py: 2 }}
-                href="/resident/payments"
-              >
-                Pay Bills
-              </Button>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<Schedule />}
-                sx={{ py: 2 }}
-                href="/resident/amenities"
-              >
-                Book Amenity
-              </Button>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                color="error"
-                startIcon={<Warning />}
-                sx={{ py: 2 }}
-                href="/resident/sos"
-              >
-                SOS
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
       </Box>
     </>
   );

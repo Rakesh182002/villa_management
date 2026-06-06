@@ -19,11 +19,14 @@ async function initializeDatabase() {
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
       multipleStatements: true, 
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
     });
 
     console.log('✅ Connected to database for initialization.');
 
-    const schemaPath = path.join(__dirname, '../../../database/1.0.0/schema.sql');
+    const schemaPath = __dirname.includes('dist')
+      ? path.join(__dirname, '../../database/1.0.0/schema.sql')
+      : path.join(__dirname, '../../../database/1.0.0/schema.sql');
     
     if (!fs.existsSync(schemaPath)) {
       throw new Error(`Schema file not found at: ${schemaPath}`);

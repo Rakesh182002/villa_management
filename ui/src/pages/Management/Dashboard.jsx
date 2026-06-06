@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Avatar, Chip,
-  LinearProgress, List, ListItem, ListItemAvatar, ListItemText,
-  Divider, Button, CircularProgress, Paper,
+  Box, Grid, Card, CardContent, Typography, Avatar,
+  Button, CircularProgress,
+  Divider,
+  LinearProgress,
 } from '@mui/material';
-import {
-  People, Apartment, Report, AccountBalance, TrendingUp,
-  DirectionsWalk, Warning, CheckCircle, Assignment, Receipt,
+import { Apartment, Report, AccountBalance, TrendingUp,
+  DirectionsWalk,
 } from '@mui/icons-material';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { managementAPI, complaintAPI, billAPI } from '../../services/api';
 import StatCard from '../../components/Common/StatCard';
 import PageHeader from '../../components/Common/PageHeader';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency } from '../../utils/helpers';
 
 const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
 
