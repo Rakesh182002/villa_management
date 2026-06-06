@@ -363,16 +363,16 @@ CREATE TABLE transactions (
 -- Insert sample data
 -- Sample users (password for all: 'password123')
 INSERT INTO users (email, password_hash, full_name, phone, role, apartment_number, is_verified) VALUES
-('priya.sharma@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Priya Sharma', '9876543210', 'resident', 'A-101', TRUE),
-('rahul.verma@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Rahul Verma', '9765432109', 'resident', 'B-204', TRUE),
-('anita.mehta@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Anita Mehta', '9654321098', 'resident', 'A-303', TRUE),
-('vikram.singh@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Vikram Singh', '9543210987', 'resident', 'C-102', TRUE),
-('deepa.iyer@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Deepa Iyer', '9432109876', 'resident', 'B-301', TRUE),
-('ramesh.kumar@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Ramesh Kumar', '9321098765', 'guard', 'Gate-1', TRUE),
-('sunil.patil@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Sunil Patil', '9210987654', 'guard', 'Gate-2', TRUE),
-('dinesh.yadav@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Dinesh Yadav', '9109876543', 'guard', 'Gate-3', TRUE),
-('amit.gupta@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Amit Gupta', '9098765432', 'management', NULL, TRUE),
-('sunita.roy@email.com', '$2a$10$usqtghWXsXDiL56OBFqOj.9KLhXCa1RlB2D0K6gKXd0AS7B0vikNG', 'Sunita Roy', '8987654321', 'management', NULL, TRUE);
+('priya.sharma@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Priya Sharma', '9876543210', 'resident', 'A-101', TRUE),
+('rahul.verma@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Rahul Verma', '9765432109', 'resident', 'B-204', TRUE),
+('anita.mehta@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Anita Mehta', '9654321098', 'resident', 'A-303', TRUE),
+('vikram.singh@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Vikram Singh', '9543210987', 'resident', 'C-102', TRUE),
+('deepa.iyer@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Deepa Iyer', '9432109876', 'resident', 'B-301', TRUE),
+('ramesh.kumar@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Ramesh Kumar', '9321098765', 'guard', 'Gate-1', TRUE),
+('sunil.patil@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Sunil Patil', '9210987654', 'guard', 'Gate-2', TRUE),
+('dinesh.yadav@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Dinesh Yadav', '9109876543', 'guard', 'Gate-3', TRUE),
+('amit.gupta@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Amit Gupta', '9098765432', 'management', NULL, TRUE),
+('sunita.roy@email.com', '$2a$10$ZL1DiW.4CR9r5HgyHZlXMefhC88QBvGAFt1UMyljbacQYDOoEVdle', 'Sunita Roy', '8987654321', 'management', NULL, TRUE);
 
 -- Sample apartments
 INSERT INTO apartments (apartment_number, block, floor, sq_ft, bedrooms, owner_name, owner_phone, is_occupied) VALUES
