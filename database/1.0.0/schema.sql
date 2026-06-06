@@ -409,10 +409,10 @@ VALUES
 ('Amphitheater', 'Outdoor amphitheater for events and gatherings', 100, 300.00, '08:00:00', '22:00:00', TRUE),
 ('BBQ / Grill Area', 'Designated outdoor barbecue and grill space', 15, 250.00, '10:00:00', '22:00:00', TRUE);
 -- Sample visitor requests
-INSERT INTO visitor_requests (resident_id, visitor_name, visitor_phone, vehicle_number, unique_code, status, purpose, expected_arrival) VALUES
-(1, 'Ravi Kumar', '9876543220', 'KA01AB1234', 'V7291', 'pending', 'Delivery', NOW() + INTERVAL 1 HOUR),
-(1, 'Sunita Devi', '9765432199', NULL, 'V8102', 'approved', 'Housework', NOW()),
-(2, 'Amazon Delivery', '8899001122', 'KA02CD5678', 'V9033', 'exited', 'Package', NOW() - INTERVAL 3 HOUR);
+INSERT INTO visitor_requests (resident_id, visitor_name, visitor_phone, vehicle_number, qr_code, unique_code, status, purpose, expected_arrival) VALUES
+(1, 'Ravi Kumar', '9876543220', 'KA01AB1234', 'DUMMY_QR', 'V7291', 'pending', 'Delivery', NOW() + INTERVAL 1 HOUR),
+(1, 'Sunita Devi', '9765432199', NULL, 'DUMMY_QR', 'V8102', 'approved', 'Housework', NOW()),
+(2, 'Amazon Delivery', '8899001122', 'KA02CD5678', 'DUMMY_QR', 'V9033', 'exited', 'Package', NOW() - INTERVAL 3 HOUR);
 
 -- Sample bills
 INSERT INTO bills (bill_number, resident_id, amount, bill_type, month_year, due_date, status) VALUES
